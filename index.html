@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -62,6 +62,14 @@
         /* 10. 送出按鈕加大 */
         .submit-btn { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1.1em; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3); } /* 原 0.9em -> 1.1em */
         .submit-btn:disabled { background: #ccc; box-shadow: none; }
+
+.modal-img {
+    width: 100%;       /* 寬度填滿彈窗 */
+    max-height: 300px;  /* ✨ 在這裡調整高度（例如 300px 或 400px） */
+    object-fit: contain; /* 確保圖片比例正常，不被裁切 */
+    display: block;
+    margin: 0 auto 15px; /* 居中並留點底部的間距 */
+}
     </style>
 </head>
 <body>
@@ -158,9 +166,9 @@
                 { id: "M10", name: "【M10】招牌高湯-8g*30袋入", desc: "茅乃舎 經典だし。", price: 727, img: "https://i.postimg.cc/FRKnD52s/zhao-pai-gao-tang-30dai-ru.jpg" },
                 { id: "M11", name: "【M11】招牌高湯-8g*12袋入", desc: "茅乃舎 經典だし。", price: 380, img: "https://i.postimg.cc/yWCDvngT/zhao-pai-gao-tang-8gx12dai-ru.jpg" },
                 { id: "M12", name: "【M12】招牌高湯-8g*5袋入", desc: "茅乃舎 經典だし。", price: 182, img: "https://i.postimg.cc/t7Gs2DZ3/zhao-pai-gao-tang-8gx5dai-ru.jpg" },
-                { id: "M13", name: "【M13】減鹽湯包-8g*5袋入", desc: "茅乃舎 經典だし。", price: 193, img: "https://i.postimg.cc/VsdVtwqC/jian-yan-tang-bao-(8g-5dai-ru).jpg" },
-                { id: "M14", name: "【M14】昆布高湯包-6g*24袋入", desc: "茅乃舎 經典だし。", price: 718, img: "https://i.postimg.cc/V5PJD4rW/kun-bu-gao-tang-6gx24dai-ru.jpg" },
-                { id: "M15", name: "【M15】昆布高湯包-6g*5袋入 ", desc: "茅乃舎 經典だし。", price: 198, img: "https://i.postimg.cc/bdfZ3LDV/kun-bu-gao-tang-5dai-ru.jpg" },
+                { id: "M13", name: "【M12】減鹽湯包-8g*5袋入", desc: "茅乃舎 經典だし。", price: 193, img: "https://i.postimg.cc/VsdVtwqC/jian-yan-tang-bao-(8g-5dai-ru).jpg" },
+                { id: "M14", name: "【M13】昆布高湯包-6g*24袋入", desc: "茅乃舎 經典だし。", price: 718, img: "https://i.postimg.cc/V5PJD4rW/kun-bu-gao-tang-6gx24dai-ru.jpg" },
+                { id: "M15", name: "【M14】昆布高湯包-6g*5袋入 ", desc: "茅乃舎 經典だし。", price: 198, img: "https://i.postimg.cc/bdfZ3LDV/kun-bu-gao-tang-5dai-ru.jpg" },
             ]
         },
         {
@@ -369,4 +377,3 @@
 </script>
 </body>
 </html>
-
