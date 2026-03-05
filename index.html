@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -282,19 +282,38 @@
     window.onclick = function(e) { if (e.target == document.getElementById('itemModal')) closeModal(); }
     
     function calculateTotal() {
-        let total = 0;
+        let productTotal = 0;
+        // 1. 計算所有商品加總
         productRegistry.forEach(p => { 
             const selectEl = document.getElementById(p.id);
             if(selectEl) {
-                total += parseInt(selectEl.value) * p.price; 
+                productTotal += parseInt(selectEl.value) * p.price; 
             }
         });
-        document.getElementById('totalAmount').innerText = total.toLocaleString();
-        document.getElementById('submitBtn').disabled = (total === 0);
+
+        // 2. 抓取運費選單數值
+        const shippingEl = document.getElementById('shippingMethod');
+        // 如果沒選(value為空)則運費為0，有選則轉為數字
+        const shippingFee = (shippingEl && shippingEl.value !== "") ? parseInt(shippingEl.value) : 0;
+
+        // 3. 處理字體顏色（美觀用）
+        if (shippingEl) {
+            shippingEl.style.color = shippingEl.value === "" ? "#666" : "#333";
+        }
+
+        // 4. 計算最終總額：商品總價 + 運費 (只有在有選商品時才顯示含運總額)
+        const finalTotal = productTotal > 0 ? productTotal + shippingFee : 0;
+
+        // 5. 更新畫面顯示
+        document.getElementById('totalAmount').innerText = finalTotal.toLocaleString();
+        
+        // 6. 如果沒買東西，禁用提交按鈕
+        document.getElementById('submitBtn').disabled = (productTotal === 0);
     }
     
+    // 監聽：無論是改「數量」還是改「配送方式」，都要觸發計算
     document.addEventListener('change', function(e) {
-        if (e.target.classList.contains('qty-select')) {
+        if (e.target.classList.contains('qty-select') || e.target.id === 'shippingMethod') {
             calculateTotal();
         }
     });
@@ -302,7 +321,7 @@
     document.getElementById('orderForm').onsubmit = async function(e) {
         e.preventDefault();
 
-        // 1. 檢查是否已選擇配送方式 (防呆)
+        // 檢查配送方式
         const shippingEl = document.getElementById('shippingMethod');
         if (!shippingEl.value) {
             alert("請先選擇「配送方式」喔！");
@@ -310,7 +329,7 @@
             return;
         }
 
-        // 2. 收集已選商品資料
+        // 收集已選商品
         const selectedItems = productRegistry
             .map(p => {
                 const el = document.getElementById(p.id);
@@ -323,11 +342,9 @@
             return;
         }
 
-        // 3. 抓取資訊
         const shippingName = shippingEl.options[shippingEl.selectedIndex].text; 
         const totalAmount = document.getElementById('totalAmount').innerText;
 
-        // 4. 建立確認彈窗
         let itemListText = "";
         selectedItems.forEach(item => {
             itemListText += `${item.name} x ${item.qty} (NT$ ${item.price * item.qty})\n`;
@@ -340,7 +357,6 @@
             submitBtn.disabled = true;
             submitBtn.innerText = "訂單傳送中...";
 
-            // 5. 產生訂單編號
             const now = new Date();
             const datePart = now.getFullYear().toString().slice(-2) + 
                              (now.getMonth() + 1).toString().padStart(2, '0') + 
@@ -348,19 +364,17 @@
             const randomPart = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
             const orderID = "EM" + datePart + randomPart; 
 
-            // 6. 封裝資料 (對應你的試算表新欄位順序)
             const formData = {
                 orderID: orderID,
                 name: document.getElementById('name').value,
                 lineId: document.getElementById('lineId').value,
                 email: document.getElementById('email').value,
-                shippingMethod: shippingName, // 這是獨立的配送方式欄位
+                shippingMethod: shippingName,
                 total: totalAmount,
                 items: selectedItems.map(i => `${i.name} x ${i.qty}`).join('\n')
             };
 
-            // 7. 送出到 Google GAS
-            const scriptURL = '這裡換成你的GAS部署網址'; 
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxw-U1AFzv8iI45HCz729EQLW6PjD3vCWkbzRjl215XFo3dmxWHi-2RmbrIrQYUZCPGfA/exec'; 
 
             try {
                 await fetch(scriptURL, {
