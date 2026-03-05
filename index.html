@@ -70,6 +70,7 @@
     display: block;
     margin: 0 auto 15px; /* 居中並留點底部的間距 */
 }
+
     </style>
 </head>
 <body>
@@ -85,14 +86,15 @@
     <input type="text" id="lineId" required placeholder="LINE ID *">
     <input type="email" id="email" required placeholder="Email *">
     
-    <div style="margin-top: 10px; margin-bottom: 20px;">
-        <label style="font-size: 0.9em; color: #666; margin-bottom: 5px; display: block; padding-left: 5px;">選擇配送方式*</label>
-        <select id="shippingMethod" style="width: 100%; height: 45px; margin-left: 0; border: 1px solid #ddd; border-radius: 8px; padding: 0 10px; font-size: 16px;" onchange="updateTotal()">
+    <div style="margin-bottom: 10px;">
+        <select id="shippingMethod" required style="width: 100%; height: 45px; border: 1px solid #ddd; border-radius: 8px; padding: 0 12px; font-size: 16px; background-color: white; color: #666;" onchange="this.style.color='#333'; calculateTotal();">
+            <option value="">請選擇配送方式 *</option>
             <option value="60">超商店到店 (+NT$ 60)</option>
             <option value="80">郵寄到府 (+NT$ 80)</option>
             <option value="0">面交 (+NT$ 0)</option>
         </select>
     </div>
+</div>
 
     <div style="margin-top: 15px; text-align: center; background: #fff; padding: 12px; border-radius: 10px; border: 1px dashed #06C755;">
         <span style="font-size: 14px; color: #666; display: block; margin-bottom: 8px;">請加入官方帳號：@824ivcsu，回傳訂單編號及匯款證明以利對帳</span>
@@ -300,7 +302,15 @@
     document.getElementById('orderForm').onsubmit = async function(e) {
         e.preventDefault();
 
-        // 1. 收集已選商品資料
+        // 1. 檢查是否已選擇配送方式 (防呆)
+        const shippingEl = document.getElementById('shippingMethod');
+        if (!shippingEl.value) {
+            alert("請先選擇「配送方式」喔！");
+            shippingEl.focus();
+            return;
+        }
+
+        // 2. 收集已選商品資料
         const selectedItems = productRegistry
             .map(p => {
                 const el = document.getElementById(p.id);
@@ -313,23 +323,24 @@
             return;
         }
 
-        // 2. 抓取運費資訊
-        const shippingEl = document.getElementById('shippingMethod');
-        const shippingName = shippingEl.options[shippingEl.selectedIndex].text; // 抓取選單文字（例如：超商店到店）
-        const totalAmount = document.getElementById('totalAmount').innerText; // 抓取當前畫面的總金額
+        // 3. 抓取資訊
+        const shippingName = shippingEl.options[shippingEl.selectedIndex].text; 
+        const totalAmount = document.getElementById('totalAmount').innerText;
 
-        // 3. 建立確認彈窗的清單文字
+        // 4. 建立確認彈窗
         let itemListText = "";
         selectedItems.forEach(item => {
             itemListText += `${item.name} x ${item.qty} (NT$ ${item.price * item.qty})\n`;
         });
-        itemListText += `\n--- 配送方式：${shippingName} ---`;
-
-        // 4. 【第一道提醒】顯示購物清單確認
-        const isConfirm = confirm(`請確認您的訂購清單：\n\n${itemListText}\n總計金額(含運)：NT$ ${totalAmount}\n\n確認無誤請按「確定」送出訂單。`);
+        
+        const isConfirm = confirm(`請確認您的訂購清單：\n\n${itemListText}\n--- 配送方式：${shippingName} ---\n總計金額(含運)：NT$ ${totalAmount}\n\n確認無誤請按「確定」送出訂單。`);
 
         if (isConfirm) {
-            // --- 開始執行送出流程 ---
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "訂單傳送中...";
+
+            // 5. 產生訂單編號
             const now = new Date();
             const datePart = now.getFullYear().toString().slice(-2) + 
                              (now.getMonth() + 1).toString().padStart(2, '0') + 
@@ -337,38 +348,32 @@
             const randomPart = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
             const orderID = "EM" + datePart + randomPart; 
 
-            // 5. 準備要傳送給 Google 的資料
+            // 6. 封裝資料 (對應你的試算表新欄位順序)
             const formData = {
                 orderID: orderID,
                 name: document.getElementById('name').value,
                 lineId: document.getElementById('lineId').value,
                 email: document.getElementById('email').value,
-                shippingMethod: shippingName, //
-                total: totalAmount, // 傳送含運總額
-                // 將品項清單最後補上運費名稱，這樣你在試算表就能直接看到
-                items: selectedItems.map(i => `${i.name} x ${i.qty}`).join('\n') + `\n【${shippingName}】`
+                shippingMethod: shippingName, // 這是獨立的配送方式欄位
+                total: totalAmount,
+                items: selectedItems.map(i => `${i.name} x ${i.qty}`).join('\n')
             };
 
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbxw-U1AFzv8iI45HCz729EQLW6PjD3vCWkbzRjl215XFo3dmxWHi-2RmbrIrQYUZCPGfA/exec';
-            const submitBtn = document.getElementById('submitBtn');
+            // 7. 送出到 Google GAS
+            const scriptURL = '這裡換成你的GAS部署網址'; 
 
             try {
-                submitBtn.disabled = true;
-                submitBtn.innerText = "訂單傳送中...";
-
                 await fetch(scriptURL, {
                     method: 'POST',
                     mode: 'no-cors',
                     body: JSON.stringify(formData)
                 });
 
-                // 6. 【第二道提醒】成功並顯示編號
-                alert(`🎉 訂單已成功送達！\n\n您的訂單編號：【 ${orderID} 】\n\n⚠️ 請務必「截圖此畫面」並點擊下方 LINE 連結回傳截圖與匯款證明，方便 Emily 進行對帳。`);
-                
-                location.reload(); // 重新整理網頁清空資料
+                alert(`🎉 訂單已成功送達！\n\n您的訂單編號：【 ${orderID} 】\n\n⚠️ 請截圖此畫面並回傳 LINE 給 Emily 對帳喔！`);
+                location.reload(); 
 
             } catch (error) {
-                alert("連線失敗，請直接截圖購物清單給 Emily。");
+                alert("傳送失敗，請直接截圖購物清單給 Emily。");
                 submitBtn.disabled = false;
                 submitBtn.innerText = "重新提交訂單";
             }
