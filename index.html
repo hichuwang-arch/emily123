@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Emily 日本代購登記表</title>
+    <style>
+        :root { --primary: #3498db; --accent: #e67e22; --bg: #f5f7fa; }
+        * { box-sizing: border-box; font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif; }
+        body { background-color: var(--bg); margin: 0; padding: 10px 10px 100px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { text-align: center; color: #333; margin-bottom: 5px; font-size: 1.1em; }
+        .sub-t { text-align: center; font-size: 0.75em; color: #888; margin-bottom: 15px; }
+        .agreement-section { background-color: #fff9f9; border: 1px solid #ffebeb; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 0.75em; }
+        .category-item { margin-bottom: 8px; border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
+        .category-header { background: #fff; padding: 10px 15px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; }
+        .category-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background: #fff; }
+        .category-header.active { background: #f0f7ff; color: var(--primary); }
+        .category-header::after { content: '▼'; font-size: 0.6em; transition: 0.3s; }
+        .category-header.active::after { transform: rotate(180deg); }
+        .product-card { display: flex; align-items: center; padding: 8px 10px; border-top: 1px solid #f9f9f9; cursor: pointer; }
+        .prod-img { width: 55px; height: 55px; object-fit: cover; border-radius: 6px; margin-right: 10px; flex-shrink: 0; background: #eee; }
+        .prod-info { flex: 1; min-width: 0; }
+        .prod-name { font-size: 0.85em; font-weight: bold; display: block; color: #333; line-height: 1.2; }
+        .prod-price { color: var(--accent); font-size: 0.9em; font-weight: bold; }
+        select { width: 55px; height: 32px; border-radius: 5px; border: 1px solid #ddd; font-size: 14px; background: #fff; margin-left: 5px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: white; border-radius: 15px; width: 100%; max-width: 350px; padding: 15px; position: relative; text-align: center; }
+        .modal-img { width: 100%; border-radius: 10px; margin-bottom: 10px; }
+        .modal-name { font-size: 1em; font-weight: bold; margin-bottom: 5px; display: block; }
+        .modal-desc { font-size: 0.8em; color: #666; white-space: pre-wrap; line-height: 1.4; text-align: left; background: #f9f9f9; padding: 10px; border-radius: 8px; }
+        .close-modal { position: absolute; top: -30px; right: 0; color: white; font-size: 24px; cursor: pointer; }
+        .user-info { background: #f9f9f9; padding: 12px; border-radius: 10px; margin-top: 15px; }
+        .user-info input { width: 100%; height: 35px; border: 1px solid #ddd; border-radius: 6px; padding: 0 10px; margin-bottom: 8px; font-size: 14px; }
+        .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 10px 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100; }
+        .submit-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em; }
+        .submit-btn:disabled { background: #ccc; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>艾米莉の日貨鋪-日本代購</h2>
+    <div class="sub-t">點擊圖片或名稱可看詳細敘述</div>
+    <form id="orderForm">
+        <div class="agreement-section" id="noticeBox"><b style="color:#e74c3c;">📍 勾選同意後選購</b></div>
+        <div id="shopList"></div>
+        <div class="user-info">
+            <input type="text" id="name" required placeholder="訂購人姓名 *">
+            <input type="text" id="lineId" required placeholder="LINE ID *">
+            <input type="email" id="email" required placeholder="Email *">
+        </div>
+    </form>
+</div>
+
+<div id="itemModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">✕</span>
+        <img id="modalImg" class="modal-img" src="">
+        <span id="modalName" class="modal-name"></span>
+        <div id="modalDesc" class="modal-desc"></div>
+    </div>
+</div>
+
+<div class="footer-bar">
+    <div style="font-size:0.85em;">總額 NT$ <span id="totalAmount" style="color:var(--accent); font-size:1.2em; font-weight:bold;">0</span></div>
+    <button type="submit" form="orderForm" id="submitBtn" class="submit-btn" disabled>提交訂單</button>
+</div>
+
+<script>
+    const notices = ["我已明白本服務為委任代買，下單後不接受取消。", "我已確認商品顏色與尺寸且海外代購不適用 7 天鑑賞期。", "我能接受國際運輸外盒擠壓之風險。", "我已知悉若遇日本缺貨將會全額退款。", "我明白收貨必須「全程錄影」以保障自身瑕疵換貨權益。", "我同意國際運費依實際秤重通知補款，並負擔可能產生的關稅。"];
+    
+    // 定義四個專區的基本資料
+    const shopData = [
+        {
+            category: "日本好市多專區(C01-C20)；點擊圖片可看商品詳述",
+            items: [
+                { id: "C01", name: "【C01】TOFFY微波用平底鍋", desc: "懶人廚房神器！底部特殊材質將微波轉熱能，煎、烤、蒸、煮、炒、燉六大功能。", price: 1030, img: "https://i.postimg.cc/P5zyMHkz/C01.jpg" },
+                { id: "C02", name: "【C02】敘敘苑沙拉醬500ML", desc: "燒肉名店監製！人氣沙拉醬，融合芝麻、洋蔥、大蒜與醬油香氣。", price: 238, img: "https://i.postimg.cc/ydV0Y3J5/C02.jpg" },
+                { id: "C03", name: "【C03】UHA綜合維他命C軟糖", desc: "等同25顆檸檬的維他命 C，增加抗氧化力！給現代人的營養補給站！把營養品變成美味補給食品！", price: 607, img: "https://i.postimg.cc/43X7RKSk/C03.jpg" },
+                { id: "C04", name: "【C04】掘西辛香料調味粉250g", desc: "知名調味粉，料理萬用。", price: 338, img: "https://i.postimg.cc/XqW2cYzJ/C04.jpg" },
+                { id: "C05", name: "【C05】IRODORI いろどり 萬能調味鹽", desc: "自然蔬菜鮮味 × 香料的絕妙平衡,無論是炒、煎、煮、烤都能輕鬆駕馭各式料理！", price: 195, img: "https://i.postimg.cc/yd8t3Pkz/C05.jpg" },
+                { id: "C06", name: "【C06】紅帽子 KUKKIA法蘭酥 60枚", desc: "4種口味共60入，口味有：經典的牛奶巧克力、濃郁的黑巧克力、白巧克力，以及鮮甜的草莓", price: 470, img: "https://i.postimg.cc/y83bHtc6/C06.jpg" },
+                { id: "C07", name: "【C07】HIKARI味噌6種春雨30食入", desc: "每份 52～80 kcal，輕食不負擔,大容量 30 入組合包，一次滿足多種口味。", price: 338, img: "https://i.postimg.cc/fysHjRrk/C07.jpg" },
+                { id: "C08", name: "【C08】一風堂赤白拉麵 550g", desc: "一風堂名店味道，在家輕鬆煮。", price: 500, img: "https://i.postimg.cc/WzV961Hz/C08.jpg" },
+                { id: "C09", name: "【C09】HIKARI MISO 麹の花有機生鹽麴", desc: "有機米與天然日曬鹽製成的日本萬能調味料，常應用於醃漬料理。", price: 400, img: "https://i.postimg.cc/xTzG5zmS/C09.jpg" },
+                { id: "C10", name: "【C10】日本好市多 PILLBOX 法式即時洋蔥湯(10入)", desc: "濃郁洋蔥香氣，熱水沖泡即可。", price: 280, img: "https://i.postimg.cc/RhfL852k/C10.jpg" },
+                { id: "C11", name: "【C11】BLUECHIP 乾燥蔬菜 350g", desc: "只需用水泡開，就能輕鬆攝取蔬菜的營養素，相當於約4.5公斤的新鮮蔬菜濃縮在這一袋裡", price: 450, img: "https://i.postimg.cc/RCRrskQQ/C11.jpg" },
+                { id: "C12", name: "【C12】關口釀造醬油仙貝85枚", desc: "一年醸熟生醬油二度沾醬，濃厚醬香層次分明", price: 390, img: "https://i.postimg.cc/sxKtMWgG/C12.jpg" },
+                { id: "C13", name: "【C13】ORIHIRO 低分子膠原蛋白 50日份", desc: "每包含有等同 6,000mg 膠原蛋白、20mg 低分子玻尿酸", price: 650, img: "https://i.postimg.cc/FzG2YSHK/C13.jpg" },
+                { id: "C14", name: "【C14】奇亞籽蒟蒻果凍 四種口味", desc: "四種口味：🍇葡萄｜🍑白桃｜🍎蘋果｜🍋瀨戶內檸檬；【商品特色】✔ 一口大小，隨手好吃，共 60 顆入✔ 4款水果口味一次滿足✔ 每顆含 1000mg 奇亞籽", price: 320, img: "https://i.postimg.cc/0jZLzSyj/C14.jpg" },
+                { id: "C15", name: "【C15】ALLIE耐久防曬乳25g *2瓶", desc: "高效防曬，輕巧好攜帶。", price: 580, img: "https://i.postimg.cc/QdcmqnPM/7793CB74DB2850F85277782C80E746368F6F8DE2.jpg" },
+                { id: "C16", name: "【C16】ALLIE SPF50 高效防曬水凝乳EX 90g *2瓶", desc: "超強防曬抗汗。", price: 1100, img: "https://i.postimg.cc/9QybBNSr/922CF4F758263FE9C308DBD950748594568F37D0.jpg" },
+                { id: "C17", name: "【C17】UHA鐵&葉酸 220粒", desc: "適合需要補充鐵與葉酸的女性，每日2粒即可補充：鐵12mg/葉酸400μg/膠原蛋白300mg。", price: 550, img: "https://i.postimg.cc/CMNyP3HQ/C16.jpg" },
+                { id: "C18", name: "【C18】叙々苑燒肉醬 600ml", desc: "在家就能享受超人氣燒肉－敘敘苑的絕妙滋味，燒肉沙拉、煎炒拌烤樣樣好。", price: 350, img: "https://i.postimg.cc/GtRMJm5m/C18.jpg" },
+                { id: "C19", name: "【C19】待填寫商品", desc: "待描述", price: 0, img: "https://via.placeholder.com/150" },
+                { id: "C20", name: "【C20】待填寫商品", desc: "待描述", price: 0, img: "https://via.placeholder.com/150" }
+            ]
+        },
+        {
+            category: "茅乃舍-經典高湯包系列(M01-M15)；點擊圖片可看商品詳述",
+            items: [
+                { id: "M01", name: "【M01】椎茸高湯-6gx5袋入", desc: "久原本家 椎茸だし。", price: 214, img: "https://i.postimg.cc/8CdjwxLq/chui-rong-gao-tang-5dai-ru.jpg" },
+                { id: "M02", name: "【M02】椎茸高湯-6gx20袋入", desc: "久原本家 椎茸だし。", price: 717, img: "https://i.postimg.cc/s2PvKb5q/chui-rong-gao-tang-20dai-ru.jpg" },
+                { id: "M03", name: "【M03】雞高湯包-8g*5袋入", desc: "久原本家 鶏だし。", price: 253, img: "https://i.postimg.cc/N085bZRZ/ji-gao-tang-5dai-ru.jpg" },
+                { id: "M04", name: "【M04】雞高湯包-8g*18袋入", desc: "久原本家 鶏だし。", price: 717, img: "https://i.postimg.cc/cJ7rTPfk/ji-gao-tang-18dai-ru.jpg" },
+                { id: "M05", name: "【M05】蔬菜高湯包-8g*5袋入 ", desc: "久原本家 野菜だし。", price: 198, img: "https://i.postimg.cc/JtCsPKDg/ye-cai-gao-tang-8g-x5dai.jpg" },
+                { id: "M06", name: "【M06】蔬菜高湯包-8g*12袋入 ", desc: "久原本家 野菜だし。", price: 414, img: "https://i.postimg.cc/fb7J51YP/ye-cai-gao-tang-12dai-ru.jpg" },
+                { id: "M07", name: "【M07】蔬菜高湯包-8g*24袋入 ", desc: "久原本家 野菜だし。", price: 717, img: "https://i.postimg.cc/P5QCQBW1/ye-cai-gao-tang-24dai-ru.jpg" },
+                { id: "M08", name: "【M08】特選究極高湯-8g*12袋入 ", desc: "特選 茅乃舎 極みだし。", price: 858, img: "https://i.postimg.cc/ydNrv4wk/te-xuan-jiu-ji-gao-tang-(8g-12ru).jpg" },
+                { id: "M09", name: "【M09】東京限定三種鰹魚高湯-8g*20袋入", desc: "東京限定 茅乃舎だし。", price: 716, img: "https://i.postimg.cc/cHJ5XyVt/dong-jing-xian-ding-san-zhong-jian-yu-gao-tang.jpg" },
+                { id: "M10", name: "【M10】招牌高湯-8g*30袋入", desc: "茅乃舎 經典だし。", price: 727, img: "https://i.postimg.cc/FRKnD52s/zhao-pai-gao-tang-30dai-ru.jpg" },
+                { id: "M11", name: "【M11】招牌高湯-8g*12袋入", desc: "茅乃舎 經典だし。", price: 380, img: "https://i.postimg.cc/yWCDvngT/zhao-pai-gao-tang-8gx12dai-ru.jpg" },
+                { id: "M12", name: "【M12】招牌高湯-8g*5袋入", desc: "茅乃舎 經典だし。", price: 182, img: "https://i.postimg.cc/t7Gs2DZ3/zhao-pai-gao-tang-8gx5dai-ru.jpg" },
+                { id: "M13", name: "【M12】減鹽湯包-8g*5袋入", desc: "茅乃舎 經典だし。", price: 193, img: "https://i.postimg.cc/VsdVtwqC/jian-yan-tang-bao-(8g-5dai-ru).jpg" },
+                { id: "M14", name: "【M13】昆布高湯包-6g*24袋入", desc: "茅乃舎 經典だし。", price: 718, img: "https://i.postimg.cc/V5PJD4rW/kun-bu-gao-tang-6gx24dai-ru.jpg" },
+                { id: "M15", name: "【M14】昆布高湯包-6g*5袋入 ", desc: "茅乃舎 經典だし。", price: 198, img: "https://i.postimg.cc/bdfZ3LDV/kun-bu-gao-tang-5dai-ru.jpg" },
+            ]
+        },
+        {
+            category: "茅乃舍-懶人即食系列(N01-N15)；點擊圖片可看商品詳述",
+            items: [
+                { id: "N01", name: "【N01】海藻味噌湯4食入", desc: "煮干しだし、国産米味噌使用。", price: 300, img: "https://i.postimg.cc/DzQ85Rqh/hai-zao-wei-ceng-tang4shi-ru.jpg" },
+                { id: "N02", name: "【N02】四種蔬菜味噌湯 4食入", desc: "野菜だし、国産米味噌使用。", price: 300, img: "https://i.postimg.cc/gJYr74KT/si-zhong-shu-cai-wei-ceng-tang4shi-ru.jpg" },
+                { id: "N03", name: "【N03】蕈菇味噌湯 4食入", desc: "国産 きのこの味噌汁。", price: 300, img: "https://i.postimg.cc/C1Fd2J43/xun-gu-wei-ceng-tang4shi-ru.jpg" },
+                { id: "N04", name: "【N04】珍珠菇味噌湯 4食入", desc: "国産米味噌使用。", price: 300, img: "https://i.postimg.cc/gJYr74KT/si-zhong-shu-cai-wei-ceng-tang4shi-ru.jpg" },
+                { id: "N05", name: "【N05】干貝雜炊調理包(無飯) 4食入", desc: "ほたて雜炊のもと (不附飯)。", price: 349, img: "https://i.postimg.cc/yx4pBgD8/gan-bei-za-chui-de-diao-li-bao4shi-ru-(bu-fu-fan).jpg" },
+                { id: "N06", name: "【N06】(春天限定)竹筍油菜花味噌湯", desc: "野菜だし入 (4食入)。", price: 300, img: "https://i.postimg.cc/SRF1q2nn/chun-tian-xian-ding-zhu-sun-you-cai-hua-wei-ceng-tang4shi-ru.jpg" },
+                { id: "N07", name: "【N07】竹麩海帶芽紅味噌湯 4食入", desc: "赤だし 創業 十六年。", price: 314, img: "https://i.postimg.cc/WzLYjFdh/zhu-fu-hai-dai-ya-hong-wei-ceng-tang4shi-ru.jpg" },
+                { id: "N08", name: "【N08】豆皮柴魚高湯-4食入", desc: "本枯れ節だし入。", price: 300, img: "https://i.postimg.cc/zvZ25by3/dou-pi-chai-yu-gao-tang4shi-ru.jpg" },
+                { id: "N09", name: "【N09】減鹽海乃七草味噌湯-4食入", desc: "減塩茅乃舎だし入 (4食入)。", price: 247, img: "https://i.postimg.cc/dVjhjz24/jian-yan-hai-nai-qi-cao-wei-ceng-tang-si-shi-ru.jpg" },
+                { id: "N10", name: "【N10】減鹽海藻味噌湯-4食入", desc: "塩味ひかえめ あおさ。", price: 300, img: "https://i.postimg.cc/sgrBSVhm/bai-jiang-you-200ml-ru.jpg" },
+                { id: "N11", name: "【N11】蔬菜蛋花湯-4食入", desc: "野菜と卵のスープ。", price: 316, img: "https://i.postimg.cc/7ZkC7x2g/shu-cai-dan-hua-tang4shi-ru.jpg" },
+                { id: "N12", name: "【N12】香菇洋蔥湯-4食入", desc: "茸のオニオンスープ。", price: 316, img: "https://i.postimg.cc/dVY7dqyj/xiang-gu-yang-cong-tang4shi-ru.jpg" },
+                { id: "N13", name: "【N13】だし春雨 醬油味 (1份)", desc: "だし春雨 醤油味。", price: 258, img: "https://i.postimg.cc/HxPvNvgY/dashi-chun-yu-jiang-you-wei-yi-ren-fen.jpg" },
+                { id: "N14", name: "【N14】だし春雨 辛味噌味 (1份)", desc: "だし春雨 辛味噌。", price: 239, img: "https://i.postimg.cc/zBfP0Z9L/dashi-chun-yu-xin-wei-ceng-kou-wei-yi-ren-fen.jpg" },
+                { id: "N15", name: "【N15】(東京限定)小松菜油豆腐味噌湯-4食入", desc: "かつおだし入り 玉子のもと。", price: 351, img: "https://i.postimg.cc/wx7GNzXy/xiao-song-cai-you-dou-fu-wei-ceng-tang.jpg" },
+            ]
+        },
+        {
+            category: "茅乃舍-靈魂醬料與調味系列(P01-P22)；點擊圖片可看商品詳述",
+            items: [
+                { id: "P01", name: "【P01】低鹽-茅乃舍高湯醬油-200ml", desc: "濃縮類型。", price: 383, img: "https://i.postimg.cc/NFqCY9K9/di-yan-mao-nai-she-gao-tang-jiang-you-200ml.jpg" },
+                { id: "P02", name: "【P02】高湯柚子醋-200ml(春夏限定)", desc: "(春夏季限定)。", price: 349, img: "https://i.postimg.cc/0jRXxMzj/gao-tang-you-zi-cu-200ml-(chun-xia-ji-xian-ding).jpg" },
+                { id: "P03", name: "【P03】日式高湯醬汁-300ml", desc: "だしつゆ 濃縮。", price: 476, img: "https://i.postimg.cc/PqbPK0mn/ri-shi-gao-tang-jiang-zhi-300ml.jpg" },
+                { id: "P04", name: "【P04】白醬油-200ml/入", desc: "白だし 濃縮。", price: 334, img: "https://i.postimg.cc/sgrBSVhm/bai-jiang-you-200ml-ru.jpg" },
+                { id: "P05", name: "【P05】柴魚醬油-100ml/入", desc: "だし醬油 かつお。", price: 247, img: "https://i.postimg.cc/W1vDr2kS/chai-yu-jiang-you-100ml-ru.jpg" },
+                { id: "P06", name: "【P06】炒洋蔥醬油沙拉醬150ml/入", desc: "炒め玉葱ドレッシング。", price: 311, img: "https://i.postimg.cc/Z52MjMJN/chao-yang-cong-jiang-you-sha-la-jiang150ml.jpg" },
+                { id: "P07", name: "【P07】壽司醋-300ml/入", desc: "壽司醋。", price: 406, img: "https://i.postimg.cc/Z52MjMJB/shou-si-cu-300ml.jpg" },
+                { id: "P08", name: "【P08】白芝麻沙拉醬 150ml", desc: "白胡麻ドレッシング。", price: 327, img: "https://i.postimg.cc/0yFBZB9w/bai-zhi-ma-sha-la-jiang-150ml.jpg" },
+                { id: "P09", name: "【P09】大蒜味噌醬 110g", desc: "焼にんにく味噌。", price: 269, img: "https://i.postimg.cc/Jzv2K2R0/da-suan-wei-ceng-jiang-110g.jpg" },
+                { id: "P10", name: "【P10】滷味高湯醬油 300ml", desc: "煮物つゆ 濃縮。", price: 406, img: "https://i.postimg.cc/wjZGFG97/lu-wei-gao-tang-jiang-you-300ml.jpg" },
+                { id: "P11", name: "【P11】濃厚燒肉醬245g/入", desc: "焼き肉のたれ。", price: 401, img: "https://i.postimg.cc/7ZdWXWq6/nong-hou-shao-rou-jiang-245g.jpg" },
+                { id: "P12", name: "【P12】生薑燒肉醬245g/入", desc: "生姜焼きのたれ。", price: 368, img: "https://i.postimg.cc/bwWBLBqd/sheng-jiang-shao-rou-jiang-245g.jpg" },
+                { id: "P13", name: "【P13】和風洋蔥醬汁245g/入", desc: "適合肉料理。", price: 368, img: "https://i.postimg.cc/K8RWP2hR/he-feng-yang-cong-jiang-zhi.jpg" },
+                { id: "P14", name: "【P14】柚子茶280g/入", desc: "柚子茶。", price: 487, img: "https://i.postimg.cc/L4QBzZ9D/you-zi-cha280g.jpg" },
+                { id: "P15", name: "【P15】青柚子胡椒65g/入", desc: "青柚子胡椒。", price: 265, img: "https://i.postimg.cc/RV31GVhf/qing-you-zi-hu-jiao-65g.jpg" },
+                { id: "P16", name: "【P16】十穀米-300g/包", desc: "国産原料使用。", price: 488, img: "https://i.postimg.cc/J4y3K40B/shi-gu-mi300g.jpg" },
+                { id: "P17", name: "【P17】羅勒蒜鹽30g/入", desc: "海塩使用。", price: 258, img: "https://i.postimg.cc/VsdVtwqC/jian-yan-tang-bao-(8g-5dai-ru).jpg" },
+                { id: "P18", name: "【P18】本味醂 300ml/入", desc: "海塩使用。", price: 409, img: "https://i.postimg.cc/RqxWXG62/ben-wei-lan-300ml-ru.jpg" }, 
+                { id: "P19", name: "【P19】玉子燒用料理包-4食入", desc: "かつおだし入り 玉子のもと。", price: 193, img: "https://i.postimg.cc/fbzwz1Q7/yu-zi-shao-yong-liao-li-bao-4shi-ru.jpg" },
+                { id: "P20", name: "【P20】東京限定厚燒玉子燒-5入", desc: "厚焼き玉子のもと。", price: 409, img: "https://i.postimg.cc/44mScG6z/dong-jing-xian-ding-hou-shao-yu-zi-shao-5ru.jpg" },  
+                { id: "P21", name: "【P21】茶碗蒸-4袋入", desc: "。", price: 301, img: "https://i.postimg.cc/wx7GNzX1/cha-wan-zheng-4dai-ru.jpg" },    
+                { id: "P22", name: "【P22】佃煮海苔醬100g/入", desc: "。", price: 229, img: "https://i.postimg.cc/yWCDvngh/dian-zhu-hai-tai-jiang-100g.jpg" },
+            ]
+        },
+        {    
+
+            category: "茅乃舍/嬰幼兒系列(Q01-Q02)；點擊圖片可看商品詳細敘述",
+            items: [
+                { id: "Q01", name: "【Q01】嬰兒專用洋風高湯4g*5袋", desc: "(建議年齡5個月以上)。", price: 209, img: "https://i.postimg.cc/fynqZtVX/ying-er-zhuan-yong-yang-feng-gao-tang4g-X-5dai-ru.jpg" },
+                { id: "Q02", name: "【Q02】嬰兒專用和風高湯4g*5袋", desc: "(建議年齡7個月以上)。", price: 209, img: "https://i.postimg.cc/XqS13Grd/ying-er-zhuan-yong-he-feng-gao-tang4g-X-5dai-ru.jpg" },
+            ]
+        },
+    ];
+
+
+    const shopList = document.getElementById('shopList');
+    let productRegistry = [];
+
+    // 生成同意條款
+    notices.forEach(n => { 
+        document.getElementById('noticeBox').innerHTML += `<label style="display:flex;margin:3px 0;align-items:flex-start;"><input type="checkbox" required style="margin: 3px 6px 0 0;"><span>${n}</span></label>`; 
+    });
+
+    // 渲染商品列表
+    shopData.forEach((cat) => {
+        const catDiv = document.createElement('div');
+        catDiv.className = 'category-item';
+        catDiv.innerHTML = `<div class="category-header"><span>${cat.category}</span></div>`;
+        const content = document.createElement('div');
+        content.className = 'category-content';
+        
+        cat.items.forEach((item) => {
+            productRegistry.push({ id: item.id, name: item.name, price: item.price });
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.innerHTML = `
+                <img src="${item.img}" class="prod-img" onclick="openModal('${item.name}', '${item.desc}', '${item.img}')">
+                <div class="prod-info" onclick="openModal('${item.name}', '${item.desc}', '${item.img}')">
+                    <span class="prod-name">${item.name}</span>
+                    <span class="prod-price">NT$ ${item.price}</span>
+                </div>
+                <select id="${item.id}" class="qty-select" onclick="event.stopPropagation()">
+                    ${[0,1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}">${n}</option>`).join('')}
+                </select>`;
+            content.appendChild(card);
+        });
+        catDiv.appendChild(content);
+        shopList.appendChild(catDiv);
+        
+        catDiv.querySelector('.category-header').onclick = function() {
+            this.classList.toggle('active');
+            const c = this.nextElementSibling;
+            c.style.maxHeight = c.style.maxHeight ? null : c.scrollHeight + "px";
+        };
+    });
+
+    function openModal(name, desc, img) {
+        document.getElementById('modalName').innerText = name;
+        document.getElementById('modalDesc').innerText = desc;
+        document.getElementById('modalImg').src = img;
+        document.getElementById('itemModal').style.display = 'flex';
+    }
+    function closeModal() { document.getElementById('itemModal').style.display = 'none'; }
+    window.onclick = function(e) { if (e.target == document.getElementById('itemModal')) closeModal(); }
+    
+    function calculateTotal() {
+        let total = 0;
+        productRegistry.forEach(p => { 
+            const selectEl = document.getElementById(p.id);
+            if(selectEl) {
+                total += parseInt(selectEl.value) * p.price; 
+            }
+        });
+        document.getElementById('totalAmount').innerText = total.toLocaleString();
+        document.getElementById('submitBtn').disabled = (total === 0);
+    }
+    
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('qty-select')) {
+            calculateTotal();
+        }
+    });
+
+    document.getElementById('orderForm').onsubmit = async function(e) {
+    e.preventDefault();
+
+    // 1. 收集已選商品資料
+    const selectedItems = productRegistry
+        .map(p => {
+            const el = document.getElementById(p.id);
+            return { name: p.name, qty: el ? parseInt(el.value) : 0, price: p.price };
+        })
+        .filter(p => p.qty > 0);
+
+    if (selectedItems.length === 0) {
+        alert("購物車是空的喔！");
+        return;
+    }
+
+    // 2. 建立購物清單文字
+    let itemListText = "";
+    selectedItems.forEach(item => {
+        itemListText += `${item.name} x ${item.qty} (NT$ ${item.price * item.qty})\n`;
+    });
+    const totalAmount = document.getElementById('totalAmount').innerText;
+
+    // 3. 【第一道提醒】顯示購物清單確認
+    const isConfirm = confirm(`請確認您的訂購清單：\n\n${itemListText}\n總計金額：NT$ ${totalAmount}\n\n確認無誤請按「確定」送出訂單。`);
+
+    if (isConfirm) {
+        // --- 開始執行送出流程 ---
+        const now = new Date();
+        const datePart = now.getFullYear().toString().slice(-2) + 
+                         (now.getMonth() + 1).toString().padStart(2, '0') + 
+                         now.getDate().toString().padStart(2, '0');
+        const randomPart = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        const orderID = "EM" + datePart + randomPart; 
+
+        // 在 onsubmit 函數中...
+        const formData = {
+        orderID: orderID,
+        name: document.getElementById('name').value,
+        lineId: document.getElementById('lineId').value,
+        email: document.getElementById('email').value,
+        total: totalAmount,
+        // 將品項清單組合成：每行一個品項 [編號]名稱 x數量
+        items: selectedItems.map(i => `${i.name} x ${i.qty}`).join('\n') 
+};
+
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxw-U1AFzv8iI45HCz729EQLW6PjD3vCWkbzRjl215XFo3dmxWHi-2RmbrIrQYUZCPGfA/exec';
+        const submitBtn = document.getElementById('submitBtn');
+
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerText = "訂單傳送中...";
+
+            await fetch(scriptURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(formData)
+            });
+
+            // 4. 【第二道提醒】成功並顯示編號
+            alert(`🎉 訂單已成功送達！\n\n您的訂單編號：【 ${orderID} 】\n\n⚠️ 請務必「截圖此畫面」回傳給 Emily 進行對帳。`);
+            
+            location.reload(); 
+
+        } catch (error) {
+            alert("連線失敗，請直接截圖購物清單給 Emily。");
+            submitBtn.disabled = false;
+            submitBtn.innerText = "重新提交訂單";
+        }
+    }
+};
+</script>
+</body>
+</html>
