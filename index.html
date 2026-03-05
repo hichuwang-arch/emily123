@@ -1,55 +1,101 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Emily 日本代購登記表</title>
-    <style>
+   <style>
         :root { --primary: #3498db; --accent: #e67e22; --bg: #f5f7fa; }
         * { box-sizing: border-box; font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif; }
-        body { background-color: var(--bg); margin: 0; padding: 10px 10px 100px; }
+        
+        /* 1. 整體基礎字體加大 */
+        body { background-color: var(--bg); margin: 0; padding: 10px 10px 100px; font-size: 16px; }
+        
         .container { max-width: 500px; margin: auto; background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { text-align: center; color: #333; margin-bottom: 5px; font-size: 1.1em; }
-        .sub-t { text-align: center; font-size: 0.75em; color: #888; margin-bottom: 15px; }
-        .agreement-section { background-color: #fff9f9; border: 1px solid #ffebeb; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 0.75em; }
+        
+        /* 2. 主標題與副標題 */
+        h2 { text-align: center; color: #333; margin-bottom: 5px; font-size: 1.4em; } /* 原 1.1em -> 1.4em */
+        .sub-t { text-align: center; font-size: 0.9em; color: #888; margin-bottom: 15px; } /* 原 0.75em -> 0.9em */
+        
+        /* 3. 代購條約文字 */
+        .agreement-section { background-color: #fff9f9; border: 1px solid #ffebeb; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 0.85em; line-height: 1.5; } /* 原 0.75em -> 0.85em */
+        
         .category-item { margin-bottom: 8px; border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
-        .category-header { background: #fff; padding: 10px 15px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; }
+        
+        /* 4. 分類標題 */
+        .category-header { background: #fff; padding: 12px 15px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 1.05em; } /* 原 0.9em -> 1.05em */
+        
         .category-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background: #fff; }
         .category-header.active { background: #f0f7ff; color: var(--primary); }
-        .category-header::after { content: '▼'; font-size: 0.6em; transition: 0.3s; }
+        .category-header::after { content: '▼'; font-size: 0.7em; transition: 0.3s; }
         .category-header.active::after { transform: rotate(180deg); }
-        .product-card { display: flex; align-items: center; padding: 8px 10px; border-top: 1px solid #f9f9f9; cursor: pointer; }
-        .prod-img { width: 55px; height: 55px; object-fit: cover; border-radius: 6px; margin-right: 10px; flex-shrink: 0; background: #eee; }
+        
+        .product-card { display: flex; align-items: center; padding: 10px 10px; border-top: 1px solid #f9f9f9; cursor: pointer; }
+        .prod-img { width: 65px; height: 65px; object-fit: cover; border-radius: 6px; margin-right: 12px; flex-shrink: 0; background: #eee; } /* 圖片稍微加大 */
+        
         .prod-info { flex: 1; min-width: 0; }
-        .prod-name { font-size: 0.85em; font-weight: bold; display: block; color: #333; line-height: 1.2; }
-        .prod-price { color: var(--accent); font-size: 0.9em; font-weight: bold; }
-        select { width: 55px; height: 32px; border-radius: 5px; border: 1px solid #ddd; font-size: 14px; background: #fff; margin-left: 5px; }
+        
+        /* 5. 商品名稱與價格（客人看得最清楚的地方） */
+        .prod-name { font-size: 1em; font-weight: bold; display: block; color: #333; line-height: 1.3; margin-bottom: 3px; } /* 原 0.85em -> 1em */
+        .prod-price { color: var(--accent); font-size: 1.05em; font-weight: bold; } /* 原 0.9em -> 1.05em */
+        
+        /* 6. 數量下拉選單加大 */
+        select { width: 65px; height: 38px; border-radius: 5px; border: 1px solid #ddd; font-size: 16px; background: #fff; margin-left: 5px; } /* 14px -> 16px */
+        
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: white; border-radius: 15px; width: 100%; max-width: 350px; padding: 15px; position: relative; text-align: center; }
-        .modal-img { width: 100%; border-radius: 10px; margin-bottom: 10px; }
-        .modal-name { font-size: 1em; font-weight: bold; margin-bottom: 5px; display: block; }
-        .modal-desc { font-size: 0.8em; color: #666; white-space: pre-wrap; line-height: 1.4; text-align: left; background: #f9f9f9; padding: 10px; border-radius: 8px; }
-        .close-modal { position: absolute; top: -30px; right: 0; color: white; font-size: 24px; cursor: pointer; }
-        .user-info { background: #f9f9f9; padding: 12px; border-radius: 10px; margin-top: 15px; }
-        .user-info input { width: 100%; height: 35px; border: 1px solid #ddd; border-radius: 6px; padding: 0 10px; margin-bottom: 8px; font-size: 14px; }
-        .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 10px 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100; }
-        .submit-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em; }
-        .submit-btn:disabled { background: #ccc; }
+        .modal-content { background: white; border-radius: 15px; width: 100%; max-width: 350px; padding: 20px; position: relative; text-align: center; }
+        
+        /* 7. 彈窗內的文字 */
+        .modal-name { font-size: 1.2em; font-weight: bold; margin-bottom: 8px; display: block; } /* 1em -> 1.2em */
+        .modal-desc { font-size: 0.95em; color: #666; white-space: pre-wrap; line-height: 1.5; text-align: left; background: #f9f9f9; padding: 12px; border-radius: 8px; } /* 0.8em -> 0.95em */
+        
+        .close-modal { position: absolute; top: -35px; right: 0; color: white; font-size: 30px; cursor: pointer; }
+        
+        /* 8. 使用者資訊輸入框 */
+        .user-info { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-top: 15px; }
+        .user-info input { width: 100%; height: 45px; border: 1px solid #ddd; border-radius: 8px; padding: 0 12px; margin-bottom: 10px; font-size: 16px; } /* 高度 35->45, 字體 14->16 */
+        
+        /* 9. 底部結帳欄位 */
+        .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -2px 15px rgba(0,0,0,0.1); z-index: 100; }
+        #totalAmountDisplay { font-size: 1.2em; font-weight: bold; color: var(--accent); }
+        
+        /* 10. 送出按鈕加大 */
+        .submit-btn { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1.1em; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3); } /* 原 0.9em -> 1.1em */
+        .submit-btn:disabled { background: #ccc; box-shadow: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>艾米莉の日貨鋪-日本代購</h2>
-    <div class="sub-t">點擊圖片或名稱可看詳細敘述</div>
+    <div class="sub-t">請點擊圖片或名稱可看商品詳細敘述</div>
     <form id="orderForm">
-        <div class="agreement-section" id="noticeBox"><b style="color:#e74c3c;">📍 勾選同意後選購</b></div>
+        <div class="agreement-section" id="noticeBox"><b style="color:#e74c3c;">📍請詳讀並勾選後再開始選購</b></div>
         <div id="shopList"></div>
-        <div class="user-info">
-            <input type="text" id="name" required placeholder="訂購人姓名 *">
-            <input type="text" id="lineId" required placeholder="LINE ID *">
-            <input type="email" id="email" required placeholder="Email *">
-        </div>
+       <div class="user-info">
+    <input type="text" id="name" required placeholder="訂購人姓名 *">
+    <input type="text" id="lineId" required placeholder="LINE ID *">
+    <input type="email" id="email" required placeholder="Email *">
+    
+    <div style="margin-top: 10px; margin-bottom: 20px;">
+        <label style="font-size: 0.9em; color: #666; margin-bottom: 5px; display: block; padding-left: 5px;">選擇配送方式*</label>
+        <select id="shippingMethod" style="width: 100%; height: 45px; margin-left: 0; border: 1px solid #ddd; border-radius: 8px; padding: 0 10px; font-size: 16px;" onchange="updateTotal()">
+            <option value="60">超商店到店 (+NT$ 60)</option>
+            <option value="80">郵寄到府 (+NT$ 80)</option>
+            <option value="0">面交 (+NT$ 0)</option>
+        </select>
+    </div>
+
+    <div style="margin-top: 15px; text-align: center; background: #fff; padding: 12px; border-radius: 10px; border: 1px dashed #06C755;">
+        <span style="font-size: 14px; color: #666; display: block; margin-bottom: 8px;">請加入官方帳號：@824ivcsu，回傳訂單編號及匯款證明以利對帳</span>
+        <a href="https://line.me/ti/p/@824ivcsu" target="_blank" style="display: inline-flex; align-items: center; background-color: #06C755; color: white; text-decoration: none; padding: 8px 20px; border-radius: 25px; font-size: 15px; font-weight: bold; transition: 0.3s;">
+            <svg style="width: 20px; height: 20px; fill: white; margin-right: 8px;" viewBox="0 0 24 24">
+                <path d="M24 10.304c0-4.579-4.337-8.304-9.66-8.304-5.322 0-9.66 3.725-9.66 8.304 0 4.1 3.442 7.535 8.089 8.191.315.068.744.208.852.477.098.245.064.63.031.88l-.13 1.15c-.039.344-.188 1.346.815.735 1.003-.611 5.418-3.192 7.391-5.465C23.036 15.346 24 12.948 24 10.304z"/>
+            </svg>
+            官方帳號連結點此
+        </a>
+    </div>
+</div>
     </form>
 </div>
 
@@ -73,7 +119,7 @@
     // 定義四個專區的基本資料
     const shopData = [
         {
-            category: "日本好市多專區(C01-C20)；點擊圖片可看商品詳述",
+            category: "日本好市多專區(C01-C20)",
             items: [
                 { id: "C01", name: "【C01】TOFFY微波用平底鍋", desc: "懶人廚房神器！底部特殊材質將微波轉熱能，煎、烤、蒸、煮、炒、燉六大功能。", price: 1030, img: "https://i.postimg.cc/P5zyMHkz/C01.jpg" },
                 { id: "C02", name: "【C02】敘敘苑沙拉醬500ML", desc: "燒肉名店監製！人氣沙拉醬，融合芝麻、洋蔥、大蒜與醬油香氣。", price: 238, img: "https://i.postimg.cc/ydV0Y3J5/C02.jpg" },
@@ -98,7 +144,7 @@
             ]
         },
         {
-            category: "茅乃舍-經典高湯包系列(M01-M15)；點擊圖片可看商品詳述",
+            category: "茅乃舍-經典高湯包系列(M01-M15)",
             items: [
                 { id: "M01", name: "【M01】椎茸高湯-6gx5袋入", desc: "久原本家 椎茸だし。", price: 214, img: "https://i.postimg.cc/8CdjwxLq/chui-rong-gao-tang-5dai-ru.jpg" },
                 { id: "M02", name: "【M02】椎茸高湯-6gx20袋入", desc: "久原本家 椎茸だし。", price: 717, img: "https://i.postimg.cc/s2PvKb5q/chui-rong-gao-tang-20dai-ru.jpg" },
@@ -118,7 +164,7 @@
             ]
         },
         {
-            category: "茅乃舍-懶人即食系列(N01-N15)；點擊圖片可看商品詳述",
+            category: "茅乃舍-懶人即食系列(N01-N15)",
             items: [
                 { id: "N01", name: "【N01】海藻味噌湯4食入", desc: "煮干しだし、国産米味噌使用。", price: 300, img: "https://i.postimg.cc/DzQ85Rqh/hai-zao-wei-ceng-tang4shi-ru.jpg" },
                 { id: "N02", name: "【N02】四種蔬菜味噌湯 4食入", desc: "野菜だし、国産米味噌使用。", price: 300, img: "https://i.postimg.cc/gJYr74KT/si-zhong-shu-cai-wei-ceng-tang4shi-ru.jpg" },
@@ -138,7 +184,7 @@
             ]
         },
         {
-            category: "茅乃舍-靈魂醬料與調味系列(P01-P22)；點擊圖片可看商品詳述",
+            category: "茅乃舍-靈魂醬料與調味系列(P01-P22)",
             items: [
                 { id: "P01", name: "【P01】低鹽-茅乃舍高湯醬油-200ml", desc: "濃縮類型。", price: 383, img: "https://i.postimg.cc/NFqCY9K9/di-yan-mao-nai-she-gao-tang-jiang-you-200ml.jpg" },
                 { id: "P02", name: "【P02】高湯柚子醋-200ml(春夏限定)", desc: "(春夏季限定)。", price: 349, img: "https://i.postimg.cc/0jRXxMzj/gao-tang-you-zi-cu-200ml-(chun-xia-ji-xian-ding).jpg" },
@@ -166,7 +212,7 @@
         },
         {    
 
-            category: "茅乃舍/嬰幼兒系列(Q01-Q02)；點擊圖片可看商品詳細敘述",
+            category: "茅乃舍/嬰幼兒系列(Q01-Q02)",
             items: [
                 { id: "Q01", name: "【Q01】嬰兒專用洋風高湯4g*5袋", desc: "(建議年齡5個月以上)。", price: 209, img: "https://i.postimg.cc/fynqZtVX/ying-er-zhuan-yong-yang-feng-gao-tang4g-X-5dai-ru.jpg" },
                 { id: "Q02", name: "【Q02】嬰兒專用和風高湯4g*5袋", desc: "(建議年齡7個月以上)。", price: 209, img: "https://i.postimg.cc/XqS13Grd/ying-er-zhuan-yong-he-feng-gao-tang4g-X-5dai-ru.jpg" },
@@ -244,76 +290,82 @@
     });
 
     document.getElementById('orderForm').onsubmit = async function(e) {
-    e.preventDefault();
+        e.preventDefault();
 
-    // 1. 收集已選商品資料
-    const selectedItems = productRegistry
-        .map(p => {
-            const el = document.getElementById(p.id);
-            return { name: p.name, qty: el ? parseInt(el.value) : 0, price: p.price };
-        })
-        .filter(p => p.qty > 0);
+        // 1. 收集已選商品資料
+        const selectedItems = productRegistry
+            .map(p => {
+                const el = document.getElementById(p.id);
+                return { name: p.name, qty: el ? parseInt(el.value) : 0, price: p.price };
+            })
+            .filter(p => p.qty > 0);
 
-    if (selectedItems.length === 0) {
-        alert("購物車是空的喔！");
-        return;
-    }
-
-    // 2. 建立購物清單文字
-    let itemListText = "";
-    selectedItems.forEach(item => {
-        itemListText += `${item.name} x ${item.qty} (NT$ ${item.price * item.qty})\n`;
-    });
-    const totalAmount = document.getElementById('totalAmount').innerText;
-
-    // 3. 【第一道提醒】顯示購物清單確認
-    const isConfirm = confirm(`請確認您的訂購清單：\n\n${itemListText}\n總計金額：NT$ ${totalAmount}\n\n確認無誤請按「確定」送出訂單。`);
-
-    if (isConfirm) {
-        // --- 開始執行送出流程 ---
-        const now = new Date();
-        const datePart = now.getFullYear().toString().slice(-2) + 
-                         (now.getMonth() + 1).toString().padStart(2, '0') + 
-                         now.getDate().toString().padStart(2, '0');
-        const randomPart = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-        const orderID = "EM" + datePart + randomPart; 
-
-        // 在 onsubmit 函數中...
-        const formData = {
-        orderID: orderID,
-        name: document.getElementById('name').value,
-        lineId: document.getElementById('lineId').value,
-        email: document.getElementById('email').value,
-        total: totalAmount,
-        // 將品項清單組合成：每行一個品項 [編號]名稱 x數量
-        items: selectedItems.map(i => `${i.name} x ${i.qty}`).join('\n') 
-};
-
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbxw-U1AFzv8iI45HCz729EQLW6PjD3vCWkbzRjl215XFo3dmxWHi-2RmbrIrQYUZCPGfA/exec';
-        const submitBtn = document.getElementById('submitBtn');
-
-        try {
-            submitBtn.disabled = true;
-            submitBtn.innerText = "訂單傳送中...";
-
-            await fetch(scriptURL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(formData)
-            });
-
-            // 4. 【第二道提醒】成功並顯示編號
-            alert(`🎉 訂單已成功送達！\n\n您的訂單編號：【 ${orderID} 】\n\n⚠️ 請務必「截圖此畫面」回傳給 Emily 進行對帳。`);
-            
-            location.reload(); 
-
-        } catch (error) {
-            alert("連線失敗，請直接截圖購物清單給 Emily。");
-            submitBtn.disabled = false;
-            submitBtn.innerText = "重新提交訂單";
+        if (selectedItems.length === 0) {
+            alert("購物車是空的喔！");
+            return;
         }
-    }
-};
+
+        // 2. 抓取運費資訊
+        const shippingEl = document.getElementById('shippingMethod');
+        const shippingName = shippingEl.options[shippingEl.selectedIndex].text; // 抓取選單文字（例如：超商店到店）
+        const totalAmount = document.getElementById('totalAmount').innerText; // 抓取當前畫面的總金額
+
+        // 3. 建立確認彈窗的清單文字
+        let itemListText = "";
+        selectedItems.forEach(item => {
+            itemListText += `${item.name} x ${item.qty} (NT$ ${item.price * item.qty})\n`;
+        });
+        itemListText += `\n--- 配送方式：${shippingName} ---`;
+
+        // 4. 【第一道提醒】顯示購物清單確認
+        const isConfirm = confirm(`請確認您的訂購清單：\n\n${itemListText}\n總計金額(含運)：NT$ ${totalAmount}\n\n確認無誤請按「確定」送出訂單。`);
+
+        if (isConfirm) {
+            // --- 開始執行送出流程 ---
+            const now = new Date();
+            const datePart = now.getFullYear().toString().slice(-2) + 
+                             (now.getMonth() + 1).toString().padStart(2, '0') + 
+                             now.getDate().toString().padStart(2, '0');
+            const randomPart = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            const orderID = "EM" + datePart + randomPart; 
+
+            // 5. 準備要傳送給 Google 的資料
+            const formData = {
+                orderID: orderID,
+                name: document.getElementById('name').value,
+                lineId: document.getElementById('lineId').value,
+                email: document.getElementById('email').value,
+                shippingMethod: shippingName, //
+                total: totalAmount, // 傳送含運總額
+                // 將品項清單最後補上運費名稱，這樣你在試算表就能直接看到
+                items: selectedItems.map(i => `${i.name} x ${i.qty}`).join('\n') + `\n【${shippingName}】`
+            };
+
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxw-U1AFzv8iI45HCz729EQLW6PjD3vCWkbzRjl215XFo3dmxWHi-2RmbrIrQYUZCPGfA/exec';
+            const submitBtn = document.getElementById('submitBtn');
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerText = "訂單傳送中...";
+
+                await fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(formData)
+                });
+
+                // 6. 【第二道提醒】成功並顯示編號
+                alert(`🎉 訂單已成功送達！\n\n您的訂單編號：【 ${orderID} 】\n\n⚠️ 請務必「截圖此畫面」並點擊下方 LINE 連結回傳截圖與匯款證明，方便 Emily 進行對帳。`);
+                
+                location.reload(); // 重新整理網頁清空資料
+
+            } catch (error) {
+                alert("連線失敗，請直接截圖購物清單給 Emily。");
+                submitBtn.disabled = false;
+                submitBtn.innerText = "重新提交訂單";
+            }
+        }
+    };
 </script>
 </body>
 </html>
